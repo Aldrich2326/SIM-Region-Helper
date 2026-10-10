@@ -1,3 +1,4 @@
+// Modified for Nrfr Next (2026); see NOTICE and CREDITS.md for provenance and changes.
 package com.github.nrfr
 
 import android.Manifest
@@ -9,26 +10,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.github.nrfr.ui.screens.AboutScreen
 import com.github.nrfr.ui.screens.MainScreen
-import com.github.nrfr.ui.screens.ShizukuNotReadyScreen
+import com.github.nrfr.ui.screens.PermissionScreen
 import com.github.nrfr.ui.theme.NrfrTheme
 import rikka.shizuku.Shizuku
 
@@ -49,7 +41,10 @@ class MainActivity : ComponentActivity() {
         }
     }
     private val shizukuBinderListener = Shizuku.OnBinderReceivedListener {
-        checkShizukuStatus()
+        runOnUiThread { checkShizukuStatus() }
+    }
+    private val shizukuDeadListener = Shizuku.OnBinderDeadListener {
+        runOnUiThread { isShizukuReady = false }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,6 +61,7 @@ class MainActivity : ComponentActivity() {
 
         // 添加 Shizuku 绑定监听器
         Shizuku.addBinderReceivedListener(shizukuBinderListener)
+        Shizuku.addBinderDeadListener(shizukuDeadListener)
 
         setContent {
             NrfrTheme {
@@ -75,49 +71,42 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AnimatedContent(
-                        targetState = showAbout,
-                        modifier = Modifier.fillMaxSize(),
-                        transitionSpec = {
-                            if (targetState) {
-                                slideInHorizontally(tween(260)) { it }
-                                    .togetherWith(slideOutHorizontally(tween(260)) { -it })
-                            } else {
-                                slideInHorizontally(tween(260)) { -it }
-                                    .togetherWith(slideOutHorizontally(tween(260)) { it })
-                            }
-                        },
-                        label = "main-about-navigation"
-                    ) { about ->
-                        if (about) {
-                            AboutScreen(onBack = { showAbout = false })
-                        } else if (isShizukuReady && isPhoneReadReady) {
-                            MainScreen(onShowAbout = { showAbout = true })
-                        } else if (!isPhoneReadReady) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Text("读取已激活 SIM 卡需要电话状态权限；本应用不会读取或修改 SIM 本体。")
-                            }
-                        } else {
-                            ShizukuNotReadyScreen()
-                        }
+                    if (showAbout) {
+                        AboutScreen(onBack = { showAbout = false })
+                    } else if (isShizukuReady && isPhoneReadReady) {
+                        MainScreen(onShowAbout = { showAbout = true })
+                    } else {
+                        PermissionScreen(
+                            phoneReady = isPhoneReadReady,
+                            onRetry = {
+                                if (!isPhoneReadReady) phonePermission.launch(Manifest.permission.READ_PHONE_STATE)
+                                else checkShizukuStatus()
+                            },
+                            onShowAbout = { showAbout = true }
+                        )
                     }
                 }
             }
         }
     }
 
-    private fun checkShizukuStatus() {
+    override fun onResume() {
+        super.onResume()
+        isPhoneReadReady = checkSelfPermission(Manifest.permission.READ_PHONE_STATE) ==
+            PackageManager.PERMISSION_GRANTED
+        if (isPhoneReadReady) checkShizukuStatus(requestIfMissing = false)
+    }
+
+    private fun checkShizukuStatus(requestIfMissing: Boolean = true) {
         if (!isPhoneReadReady) return
-        isShizukuReady = if (Shizuku.getBinder() == null) {
+        isShizukuReady = if (!Shizuku.pingBinder()) {
             Toast.makeText(this, "请先安装并启用 Shizuku", Toast.LENGTH_LONG).show()
             false
         } else {
-            val hasPermission = Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
-            if (!hasPermission) {
+            val hasPermission = runCatching {
+                Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
+            }.getOrDefault(false)
+            if (!hasPermission && requestIfMissing) {
                 Shizuku.requestPermission(0)
             }
             hasPermission
@@ -128,5 +117,6 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener)
         Shizuku.removeBinderReceivedListener(shizukuBinderListener)
+        Shizuku.removeBinderDeadListener(shizukuDeadListener)
     }
 }

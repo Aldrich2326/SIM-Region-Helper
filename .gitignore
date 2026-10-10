@@ -10,3 +10,9 @@
 .cxx
 local.properties
 *.log
+*.jks
+*.keystore
+*.p12
+*.idsig
+.env
+/signing/

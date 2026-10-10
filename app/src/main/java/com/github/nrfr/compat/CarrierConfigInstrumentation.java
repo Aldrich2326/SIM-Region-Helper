@@ -1,3 +1,4 @@
+// Modified for Nrfr Next (2026); see NOTICE and CREDITS.md for provenance and changes.
 package com.github.nrfr.compat;
 
 /* Derived from Ritel-T/SamsungRegionOverride (MIT); adapted for Nrfr Android 17. */
@@ -11,6 +12,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Build;
 import android.os.SystemClock;
 import android.content.pm.PackageManager;
 import android.os.PersistableBundle;
@@ -200,10 +202,9 @@ public final class CarrierConfigInstrumentation extends Instrumentation {
         restore.putString(KEY_COUNTRY_ISO, iso);
         // Restore this fork's one key without passing null, because null would clear every transient
         // CarrierConfig override on the subscription, including values owned by another tool.
-        if (!writeAndAwaitReload(manager, subId, restore)) {
-            throw new IllegalStateException(
-                    "Real country ISO reload was not confirmed");
-        }
+        // Some vendor ROMs suppress this broadcast. The UI coordinator verifies the actual
+        // reported country repeatedly; a missing broadcast alone must not claim restore failed.
+        writeAndAwaitReload(manager, subId, restore);
         return iso;
     }
 
@@ -247,8 +248,13 @@ public final class CarrierConfigInstrumentation extends Instrumentation {
         boolean observed = false;
         // Registered before the write, or a reload that finishes quickly is missed entirely and every
         // apply pays the full ceiling.
-        context.registerReceiver(receiver,
-                new IntentFilter(CarrierConfigManager.ACTION_CARRIER_CONFIG_CHANGED));
+        IntentFilter filter = new IntentFilter(CarrierConfigManager.ACTION_CARRIER_CONFIG_CHANGED);
+        if (Build.VERSION.SDK_INT >= 33) {
+            // The telephony sender may run as the phone UID rather than the system UID.
+            context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED);
+        } else {
+            context.registerReceiver(receiver, filter);
+        }
         try {
             invokeTransientOverride(manager, subId, values);
             observed = reloaded.await(SETTLE_CEILING_MILLIS, TimeUnit.MILLISECONDS);
@@ -265,7 +271,9 @@ public final class CarrierConfigInstrumentation extends Instrumentation {
     private static String inspectRuntime() throws Exception {
         Method method = findOverrideMethod();
         return "instrumentationUid=" + android.os.Process.myUid()
-                + "\ncarrierConfigMethod=" + signature(method);
+                + "\ncarrierConfigMethod=" + signature(method)
+                + "\nPhone permissions delegated; no country write attempted"
+                + "\nThis check cannot prove the vendor service will accept a write";
     }
 
     private static void invokeTransientOverride(CarrierConfigManager manager, int subId,

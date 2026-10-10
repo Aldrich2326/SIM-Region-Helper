@@ -22,6 +22,6 @@ jobs:
         with:
           packages: platform-tools
       - name: Install Android SDK platform
-        run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
+        run: sdkmanager 'platforms;android-35' 'build-tools;34.0.0'
       - name: Build and test Android app
-        run: bash ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:assembleRelease
+        run: bash ./gradlew :app:testDebugUnitTest :app:assembleRelease :app:lintRelease

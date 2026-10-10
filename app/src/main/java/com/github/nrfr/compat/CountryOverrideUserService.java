@@ -1,3 +1,4 @@
+// Modified for Nrfr Next (2026); see NOTICE and CREDITS.md for provenance and changes.
 package com.github.nrfr.compat;
 
 import android.content.Context;
@@ -7,6 +8,11 @@ public final class CountryOverrideUserService extends ICountryOverrideService.St
     public CountryOverrideUserService() {}
 
     public CountryOverrideUserService(Context context) {}
+
+    @Override
+    public String inspectRuntime() {
+        return execute(CarrierConfigBridge::inspectRuntime);
+    }
 
     @Override
     public String applyCountryIso(int subId, String iso, String expectedOperatorNumeric) {

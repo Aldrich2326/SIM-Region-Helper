@@ -1,3 +1,4 @@
+// Modified for Nrfr Next (2026); see NOTICE and CREDITS.md for provenance and changes.
 package com.github.nrfr.compat;
 
 import android.content.ComponentName;
@@ -7,6 +8,7 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 
@@ -26,6 +28,21 @@ public final class CountryOverrideCoordinator {
     private static final Object OPERATION_LOCK = new Object();
 
     private CountryOverrideCoordinator() {}
+
+    /** Exercises startup and permission delegation, but never invokes overrideConfig. */
+    public static String diagnose(Context context) throws Exception {
+        synchronized (OPERATION_LOCK) {
+            try {
+                String result = withService(context, ICountryOverrideService::inspectRuntime);
+                DeviceDiagnostics.save(context, "read-only environment check", result);
+                return "权限与接口检查通过，尚未执行国家码写入。\n" + result;
+            } catch (Exception failure) {
+                DeviceDiagnostics.save(context, "environment check failed",
+                        DeviceDiagnostics.failure(failure));
+                throw failure;
+            }
+        }
+    }
 
     public static boolean hasSnapshot(Context context, int subId) {
         if (!SubscriptionManager.isValidSubscriptionId(subId)) return false;
@@ -58,7 +75,8 @@ public final class CountryOverrideCoordinator {
             requireSubId(subId);
             String target = requireIso(countryIso);
             TelephonyManager phone = phoneFor(context, subId);
-            String current = requireIso(phone.getSimCountryIso());
+            requireReady(phone);
+            String current = phone.getSimCountryIso();
             String numeric = requireNumeric(phone.getSimOperator());
             SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
             String originalKey = "iso_" + subId;
@@ -72,17 +90,29 @@ public final class CountryOverrideCoordinator {
             }
             // The reported ISO may already be spoofed by this or another app. For mainland China
             // MCCs, the unmodified operator numeric gives us the physical SIM's country instead.
-            String original = resolveRestoreIso(numeric, current);
+            String original = resolveRestoreIso(numeric,
+                    current == null || current.isEmpty() ? null : current);
+            if (original == null) {
+                throw new IllegalStateException("Original SIM country is unavailable; nothing was changed");
+            }
             if (!prefs.contains(originalKey) && !prefs.edit()
                     .putString(originalKey, original)
                     .putString(numericKey, numeric)
                     .commit()) {
                 throw new IllegalStateException("Could not save the original country before writing");
             }
-            String result = withService(context,
-                    service -> service.applyCountryIso(subId, target, numeric));
-            verifyReportedCountry(phone, target);
-            return result;
+            try {
+                String result = withService(context,
+                        service -> service.applyCountryIso(subId, target, numeric));
+                verifyReportedCountry(phone, target, numeric);
+                DeviceDiagnostics.save(context, "apply / sub=" + subId,
+                        result + "\nStable public SIM country verified: " + target);
+                return result;
+            } catch (Exception failure) {
+                DeviceDiagnostics.save(context, "apply failed / sub=" + subId,
+                        DeviceDiagnostics.failure(failure));
+                throw failure;
+            }
         }
     }
 
@@ -95,6 +125,7 @@ public final class CountryOverrideCoordinator {
             String original = prefs.getString(originalKey, null);
             String savedNumeric = prefs.getString(numericKey, null);
             TelephonyManager phone = phoneFor(context, subId);
+            requireReady(phone);
             String numeric = requireNumeric(phone.getSimOperator());
             if ((original == null) != (savedNumeric == null)) {
                 throw new IllegalStateException("Incomplete country restore snapshot");
@@ -112,8 +143,10 @@ public final class CountryOverrideCoordinator {
             } else {
                 result = withService(context,
                         service -> service.restoreCountryIso(subId, target, numeric));
-                verifyReportedCountry(phone, target);
             }
+            verifyReportedCountry(phone, target, numeric);
+            DeviceDiagnostics.save(context, "restore / sub=" + subId,
+                    result + "\nStable public SIM country verified: " + target);
             if (!prefs.edit().remove(originalKey).remove(numericKey).commit()) {
                 throw new IllegalStateException("Country was restored but local snapshot cleanup failed");
             }
@@ -184,14 +217,18 @@ public final class CountryOverrideCoordinator {
         }
     }
 
-    private static void verifyReportedCountry(TelephonyManager phone, String expected)
-            throws InterruptedException {
-        for (int attempt = 0; attempt < 8; attempt++) {
-            if (expected.equalsIgnoreCase(phone.getSimCountryIso())) return;
-            Thread.sleep(250L);
+    private static void verifyReportedCountry(TelephonyManager phone, String expected,
+            String expectedNumeric) throws InterruptedException {
+        CountryVerification.awaitStable(expected, expectedNumeric, phone::getSimCountryIso,
+                phone::getSimOperator,
+                () -> phone.getSimState() == TelephonyManager.SIM_STATE_READY,
+                SystemClock::uptimeMillis, Thread::sleep);
+    }
+
+    private static void requireReady(TelephonyManager phone) {
+        if (phone.getSimState() != TelephonyManager.SIM_STATE_READY) {
+            throw new IllegalStateException("SIM is not ready; wait for the network to recover");
         }
-        throw new IllegalStateException("CarrierConfig command completed, but SIM country did not become "
-                + expected + "; restore snapshot was retained");
     }
 
     private static TelephonyManager phoneFor(Context context, int subId) {

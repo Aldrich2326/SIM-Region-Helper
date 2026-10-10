@@ -1,6 +1,9 @@
+// Modified for Nrfr Next (2026); see NOTICE and CREDITS.md for provenance and changes.
 package com.github.nrfr.manager
 
 import android.content.Context
+import android.Manifest
+import android.content.pm.PackageManager
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import com.github.nrfr.compat.CountryOverrideCoordinator
@@ -9,10 +12,14 @@ import com.github.nrfr.model.SimCardInfo
 /** Public telephony reads; the country-only write is isolated in the compatibility service. */
 object CarrierConfigManager {
     fun getSimCards(context: Context): List<SimCardInfo> {
-        val subscriptions = runCatching {
+        if (context.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) !=
+            PackageManager.PERMISSION_GRANTED) return emptyList()
+        val subscriptions = try {
             context.getSystemService(SubscriptionManager::class.java)
                 ?.activeSubscriptionInfoList.orEmpty()
-        }.getOrDefault(emptyList())
+        } catch (_: SecurityException) {
+            return emptyList()
+        }
         val telephony = context.getSystemService(TelephonyManager::class.java)
             ?: return emptyList()
         val defaultDataSubId = SubscriptionManager.getDefaultDataSubscriptionId()

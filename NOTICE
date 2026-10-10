@@ -1,0 +1,33 @@
+Nrfr Next — source and modification notice
+
+Original project: Ackites / Nrfr
+https://github.com/Ackites/Nrfr
+The original Nrfr project is distributed under the Apache License, Version 2.0.
+Its original LICENSE and existing copyright notices are retained.
+
+Direct source: JHR-deve / Nrfr-Android17
+https://github.com/JHR-deve/Nrfr-Android17
+Based on commit c87e24c2341bf1c334f5794ac59d2acde865dafe.
+That derivative identifies Ackites/Nrfr commit
+c8044fe7d42beea496d66fae43b9683fcf942ce4 as its original base.
+See NOTICE-ANDROID17.md for the retained upstream provenance notice.
+
+Portions of the compatibility bridge and permission handshake are adapted from:
+Ritel-T / SamsungRegionOverride
+https://github.com/Ritel-T/SamsungRegionOverride
+Those portions remain under the MIT License, including the original copyright
+notice in licenses/SamsungRegionOverride-MIT.txt.
+
+Nrfr Next is maintained by Aldrich2326:
+https://github.com/Aldrich2326/Nrfr-Next
+Changes made in 2026 include an independent application variant, Android 16
+compatibility handling, read-only diagnostics, stable country readback checks,
+permission-state handling, a refreshed Compose interface, offline license viewing,
+source attribution, build tooling updates and automated verification.
+These modifications are provided under the Apache License, Version 2.0, except
+where the retained MIT notices apply. This notice does not replace either license.
+
+This is an unofficial community derivative. It is not an official release by
+Ackites, JHR-deve or Ritel-T, and no endorsement from those authors is implied.
+The inherited nrfr-client desktop component is preserved as upstream reference;
+it has not been adapted or validated for the Android application in this fork.

@@ -1,3 +1,4 @@
+// Modified for Nrfr Next (2026); see NOTICE and CREDITS.md for provenance and changes.
 package com.github.nrfr
 
 import androidx.test.platform.app.InstrumentationRegistry
@@ -20,6 +21,6 @@ class ExampleInstrumentedTest {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
         // Local derivative uses a separate application ID so it cannot replace upstream Nrfr.
-        assertEquals("io.github.jhrdeve.nrfr", appContext.packageName)
+        assertEquals("io.github.nrfr.iqoo15", appContext.packageName)
     }
 }
