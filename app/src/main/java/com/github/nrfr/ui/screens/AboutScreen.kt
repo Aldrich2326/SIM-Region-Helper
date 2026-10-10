@@ -55,7 +55,7 @@ fun AboutScreen(onBack: () -> Unit) {
                     SourceCard("原作者 · Ackites", "Nrfr 的原始项目与核心功能", "Ackites / Nrfr", ProjectInfo.ORIGINAL, true)
                     SourceCard("兼容改版 · JHR-deve", "Android 17 权限桥与临时配置调用路径", "JHR-deve / Nrfr-Android17", ProjectInfo.COMPATIBILITY)
                     SourceCard("兼容层来源 · Ritel-T", "部分 instrumentation 与权限握手实现，使用 MIT 许可", "Ritel-T / SamsungRegionOverride", ProjectInfo.BRIDGE)
-                    SourceCard("本版维护 · Aldrich2326", "界面整理、环境诊断与 Android 16 兼容改进", "Aldrich2326 / Nrfr-Next", ProjectInfo.REPOSITORY)
+                    SourceCard("本版维护 · Aldrich2326", "界面整理、环境诊断与 Android 16 兼容改进", "Aldrich2326 / SIM-Region-Helper", ProjectInfo.REPOSITORY)
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SectionHeading("开源许可", "许可与来源声明随安装包提供，可离线阅读")

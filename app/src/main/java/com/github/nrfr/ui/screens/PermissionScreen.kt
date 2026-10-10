@@ -28,7 +28,7 @@ fun PermissionScreen(phoneReady: Boolean, onRetry: () -> Unit, onShowAbout: () -
             }
             Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 SectionHeading("01  电话状态权限", if (phoneReady) "已允许 · 用于读取已激活的 SIM" else "用于显示 SIM 卡列表，不读取联系人或通话记录")
-                SectionHeading("02  Shizuku 授权", "先启动 Shizuku，再单独授权 Nrfr Next。其他版本的授权不会自动继承。")
+                SectionHeading("02  Shizuku 授权", "先启动 Shizuku，再单独授权 SIM 地区助手。其他版本的授权不会自动继承。")
             }
             Button(onClick = onRetry, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
                 Text(if (phoneReady) "重新检查并授权" else "允许读取 SIM 状态")

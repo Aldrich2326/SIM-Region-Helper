@@ -1,13 +1,13 @@
 # 兼容性与测试范围
 
-Nrfr Next 基于 JHR-deve/Nrfr-Android17，再溯源至 Ackites/Nrfr。通过 Shizuku 启动短时 instrumentation，临时委托电话状态权限，写入非持久的 `sim_country_iso_override_string`。部分系统拒绝 shell 直接调用 `overrideConfig`，因此保留直接上游的委托路径。接口可用不保证每款厂商系统均接受写入。
+SIM 地区助手 基于 JHR-deve/Nrfr-Android17，再溯源至 Ackites/Nrfr。通过 Shizuku 启动短时 instrumentation，临时委托电话状态权限，写入非持久的 `sim_country_iso_override_string`。部分系统拒绝 shell 直接调用 `overrideConfig`，因此保留直接上游的委托路径。接口可用不保证每款厂商系统均接受写入。
 
 ## 当前验证范围
 
 - 2026-10-10，先前本地构建在 iQOO 15 / Android 16 / 2026-08-01 安全补丁上完成安装、启动、电话权限、Shizuku 授权与只读环境检查。
 - 当时用户仅要求检查启动和权限，国家码写入、还原、电话及移动数据未纳入受控验证。用户随后反馈“好像可以用了”，属于用户观察，并非完整兼容性结论。
-- Nrfr Next 新界面使用主机端虚构 SIM 数据检查布局和交互；该版本没有据此宣称重新完成上述全部真机测试。
-- 直接上游文档报告的 Android 17 双 SIM 实机结果属于上游版本，不应视为 Nrfr Next 已在 Android 17 验证。
+- SIM 地区助手 新界面使用主机端虚构 SIM 数据检查布局和交互；该版本没有据此宣称重新完成上述全部真机测试。
+- 直接上游文档报告的 Android 17 双 SIM 实机结果属于上游版本，不应视为 SIM 地区助手 已在 Android 17 验证。
 - 最低可安装 Android 10 / API 29；其他设备、系统版本及补丁需分别验证。
 
 ## 操作行为
@@ -26,6 +26,6 @@ Nrfr Next 基于 JHR-deve/Nrfr-Android17，再溯源至 Ackites/Nrfr。通过 Sh
 
 ## 版本升级
 
-显示名称为 Nrfr Next。内部包名保留此前本地测试包的 `io.github.nrfr.iqoo15`，相同签名与递增版本号用于延续已有还原快照。它不与 Ackites 原版或 JHR 改版共享数据。
+显示名称为 SIM 地区助手。内部包名保留此前本地测试包的 `io.github.nrfr.iqoo15`，相同签名与递增版本号用于延续已有还原快照。它不与 Ackites 原版或 JHR 改版共享数据。
 
 其他包名版本曾写入的配置，应由对应应用负责其还原流程；本版不能保证拥有其他版本记录的原值。遇到失败可附脱敏诊断与操作步骤，不公开 SIM 标识和号码。

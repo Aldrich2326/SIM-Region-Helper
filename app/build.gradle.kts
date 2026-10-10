@@ -15,8 +15,8 @@ android {
         minSdk = 29
         targetSdk = 34
         // Keep the initial package ID so existing users retain their restore snapshots.
-        versionCode = 2
-        versionName = "1.1.0-preview1"
+        versionCode = 3
+        versionName = "1.1.0-preview2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

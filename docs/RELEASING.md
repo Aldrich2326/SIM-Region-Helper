@@ -1,6 +1,8 @@
 # 构建、验证与发布
 
-Nrfr Next 使用 JDK 21、Gradle 8.9、AGP 8.7.3、Kotlin 2.0.21、Android SDK 35 / build-tools 34.0.0。`minSdk=29`，`targetSdk=34`。
+当前发布验证记录见 [1.1.0-preview2](VALIDATION-preview2.md)；[前一版本记录](VALIDATION.md)保留历史名称与当时结果。
+
+SIM 地区助手 使用 JDK 21、Gradle 8.9、AGP 8.7.3、Kotlin 2.0.21、Android SDK 35 / build-tools 34.0.0。`minSdk=29`，`targetSdk=34`。
 
 设置 `ANDROID_HOME` 或在未跟踪的 `local.properties` 中设置 `sdk.dir`。运行：
 

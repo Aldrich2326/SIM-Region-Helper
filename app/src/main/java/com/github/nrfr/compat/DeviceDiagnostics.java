@@ -21,7 +21,7 @@ public final class DeviceDiagnostics {
     }
 
     public static String header() {
-        return "Nrfr Next " + BuildConfig.VERSION_NAME
+        return "SIM 地区助手 " + BuildConfig.VERSION_NAME
                 + "\nDevice: " + Build.MANUFACTURER + " / " + Build.BRAND + " / " + Build.MODEL
                 + "\nAndroid: " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")"
                 + "\nSecurity patch: " + Build.VERSION.SECURITY_PATCH

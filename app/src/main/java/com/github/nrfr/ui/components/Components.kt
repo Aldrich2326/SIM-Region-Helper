@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -19,7 +20,8 @@ import com.github.nrfr.ui.ProjectInfo
 fun BrandTitle() {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Icon(painterResource(R.drawable.ic_app_mark), null, Modifier.size(32.dp), tint = Color.Unspecified)
-        Text(ProjectInfo.NAME, style = MaterialTheme.typography.titleLarge)
+        Text(ProjectInfo.NAME, style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.weight(1f, fill = false), maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

@@ -1,12 +1,12 @@
-# Nrfr Next
+# SIM 地区助手
 
 **一款免 Root 的 SIM 国家码设置工具。** 使用 Shizuku 调整 Android 系统向应用报告的 SIM 国家或地区，提供双卡选择、临时设置、还原和本地环境诊断。
 
 **原作者：[Ackites / Nrfr](https://github.com/Ackites/Nrfr)** · 直接改版来源：[JHR-deve / Nrfr-Android17](https://github.com/JHR-deve/Nrfr-Android17) · 本版维护：[Aldrich2326](https://github.com/Aldrich2326)
 
-Nrfr Next 是非官方社区改版，保留原作者归属、上游提交历史及开源许可。本版不是任何上游作者的官方发行版，也不代表其认可本版修改。完整来源链见 [作者致谢](CREDITS.md) 和 [修改声明](NOTICE)。
+SIM 地区助手 是非官方社区改版，保留原作者归属、上游提交历史及开源许可。本版不是任何上游作者的官方发行版，也不代表其认可本版修改。完整来源链见 [作者致谢](CREDITS.md) 和 [修改声明](NOTICE)。
 
-[下载安装包](https://github.com/Aldrich2326/Nrfr-Next/releases) · [使用与兼容性](docs/COMPATIBILITY.md) · [构建与验证](docs/RELEASING.md) · [Apache-2.0](LICENSE)
+[下载安装包](https://github.com/Aldrich2326/SIM-Region-Helper/releases) · [使用与兼容性](docs/COMPATIBILITY.md) · [构建与验证](docs/RELEASING.md) · [Apache-2.0](LICENSE)
 
 ## 界面
 
@@ -34,8 +34,8 @@ Nrfr Next 是非官方社区改版，保留原作者归属、上游提交历史�
 
 ## 开始使用
 
-1. 在 [发行版页面](https://github.com/Aldrich2326/Nrfr-Next/releases) 下载已签名 APK。
-2. 安装并启动 [Shizuku](https://github.com/RikkaApps/Shizuku)，单独授权 Nrfr Next。
+1. 在 [发行版页面](https://github.com/Aldrich2326/SIM-Region-Helper/releases) 下载已签名 APK。
+2. 安装并启动 [Shizuku](https://github.com/RikkaApps/Shizuku)，单独授权 SIM 地区助手。
 3. 允许读取电话状态，进入主界面后可先点“检查环境”。该检查不修改国家码。
 4. 需要设置时，选择 SIM、目标地区，再点击“应用到 SIM …”。双卡分别处理。
 5. 需要撤销时，使用“还原所选 SIM 地区”，并查看回读核验结果。
@@ -53,7 +53,7 @@ Nrfr Next 是非官方社区改版，保留原作者归属、上游提交历史�
 | **[Ackites/Nrfr](https://github.com/Ackites/Nrfr)** | 原始项目与核心功能，Apache-2.0 |
 | [JHR-deve/Nrfr-Android17](https://github.com/JHR-deve/Nrfr-Android17) | 直接来源，兼容权限桥与配置调用路径 |
 | [Ritel-T/SamsungRegionOverride](https://github.com/Ritel-T/SamsungRegionOverride) | 部分兼容桥与权限握手，MIT |
-| [Aldrich2326/Nrfr-Next](https://github.com/Aldrich2326/Nrfr-Next) | 本版界面、诊断、兼容处理与维护 |
+| [Aldrich2326/SIM-Region-Helper](https://github.com/Aldrich2326/SIM-Region-Helper) | 本版界面、诊断、兼容处理与维护 |
 
 原 [LICENSE](LICENSE) 保持不变；MIT 兼容层版权与许可全文见 [licenses/SamsungRegionOverride-MIT.txt](licenses/SamsungRegionOverride-MIT.txt)。本版修改以 Apache-2.0 提供，已有 MIT 部分维持原许可。[NOTICE-ANDROID17.md](NOTICE-ANDROID17.md) 保留直接上游来源声明；[NOTICE](NOTICE) 记录本版修改。
 

@@ -1,4 +1,5 @@
-Nrfr Next — source and modification notice
+SIM Region Helper / SIM 地区助手 — source and modification notice
+Previously named Nrfr Next; renamed on 2026-10-11.
 
 Original project: Ackites / Nrfr
 https://github.com/Ackites/Nrfr
@@ -18,8 +19,8 @@ https://github.com/Ritel-T/SamsungRegionOverride
 Those portions remain under the MIT License, including the original copyright
 notice in licenses/SamsungRegionOverride-MIT.txt.
 
-Nrfr Next is maintained by Aldrich2326:
-https://github.com/Aldrich2326/Nrfr-Next
+SIM 地区助手 is maintained by Aldrich2326:
+https://github.com/Aldrich2326/SIM-Region-Helper
 Changes made in 2026 include an independent application variant, Android 16
 compatibility handling, read-only diagnostics, stable country readback checks,
 permission-state handling, a refreshed Compose interface, offline license viewing,

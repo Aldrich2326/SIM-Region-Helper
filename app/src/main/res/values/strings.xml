@@ -1,5 +1,5 @@
 <!-- Modified for Nrfr Next (2026); see NOTICE and CREDITS.md for provenance and changes. -->
 <resources>
     <!-- Local derivative of Ackites/Nrfr; not an official upstream release. -->
-    <string name="app_name">Nrfr Next</string>
+    <string name="app_name">SIM 地区助手</string>
 </resources>
