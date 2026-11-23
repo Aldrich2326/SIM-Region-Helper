@@ -50,7 +50,7 @@ import kotlinx.coroutines.withContext
 import java.util.Locale
 
 @Composable
-fun MainScreen(onShowAbout: () -> Unit) {
+fun MainScreen(onShowAbout: () -> Unit, onShowPermissions: () -> Unit = {}) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val clipboard = LocalClipboardManager.current
@@ -105,6 +105,7 @@ fun MainScreen(onShowAbout: () -> Unit) {
         restoreAvailable = restoreAvailable, busy = isBusy,
         result = lastResult, resultIsError = resultIsError,
         onShowAbout = onShowAbout,
+        onShowPermissions = onShowPermissions,
         onSelectSim = { sim ->
             selectedSubId = sim.subId
             selectedCountryCode = ""
@@ -158,7 +159,7 @@ internal fun MainScreenContent(
     onShowAbout: () -> Unit = {}, onSelectSim: (SimCardInfo) -> Unit = {},
     onChooseCountry: () -> Unit = {}, onCountryInput: (String) -> Unit = {},
     onApply: () -> Unit = {}, onRestore: () -> Unit = {}, onDiagnose: () -> Unit = {},
-    onCopyDiagnostics: () -> Unit = {}
+    onCopyDiagnostics: () -> Unit = {}, onShowPermissions: () -> Unit = {}
 ) {
     val colors = MaterialTheme.colorScheme
     Scaffold(topBar = {
@@ -273,6 +274,8 @@ internal fun MainScreenContent(
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SectionHeading("环境与诊断", "检查只读取环境信息，不修改国家码")
+                    OutlinedButton(onClick = onShowPermissions, enabled = !busy,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("查看授权状态") }
                     OutlinedButton(onClick = onDiagnose, enabled = !busy,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("检查环境") }
                     TextButton(onClick = onCopyDiagnostics, enabled = !busy,

@@ -18,6 +18,8 @@ import com.github.nrfr.ui.screens.AboutScreen
 import com.github.nrfr.ui.screens.MainScreenContent
 import com.github.nrfr.ui.screens.PermissionScreen
 import com.github.nrfr.ui.theme.NrfrTheme
+import com.github.nrfr.compat.AuthorizationState
+import com.github.nrfr.compat.ShizukuAccess
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -110,9 +112,37 @@ class InterfaceTest {
     }
 
     @Test fun permissionPreviewIncludesOriginalAuthor() {
-        compose.setContent { NrfrTheme { PermissionScreen(false, {}, {}) } }
+        compose.setContent { NrfrTheme { PermissionScreen(AuthorizationState()) } }
         compose.onNodeWithText("源自 Ackites / Nrfr").assertExists()
         screenshot("permission")
+    }
+
+    @Test fun shizukuRequestIsAvailableBeforePhonePermission() {
+        var requested = false
+        compose.setContent { NrfrTheme {
+            PermissionScreen(AuthorizationState(false, ShizukuAccess.NOT_GRANTED),
+                onShizukuRequest = { requested = true })
+        } }
+        compose.onNodeWithText("未授权").assertExists()
+        compose.onNodeWithText("申请 Shizuku 授权").performScrollTo().assertIsEnabled().performClick()
+        assertTrue(requested)
+        screenshot("authorization-request")
+    }
+
+    @Test fun disconnectedDoesNotOfferFakeRequestOrReady() {
+        compose.setContent { NrfrTheme { PermissionScreen(AuthorizationState()) } }
+        compose.onNodeWithText("未连接").assertExists()
+        compose.onNodeWithText("申请 Shizuku 授权").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("进入 SIM 设置").assertDoesNotExist()
+    }
+
+    @Test fun authorizedButPhoneDeniedCannotEnterSettings() {
+        compose.setContent { NrfrTheme {
+            PermissionScreen(AuthorizationState(false, ShizukuAccess.GRANTED))
+        } }
+        compose.onNodeWithText("已授权").assertExists()
+        compose.onNodeWithText("进入 SIM 设置").assertDoesNotExist()
+        compose.onNodeWithText("申请电话状态权限").performScrollTo().assertIsEnabled()
     }
 
     private fun preview(name: String, dark: Boolean, fontScale: Float = 1f) {

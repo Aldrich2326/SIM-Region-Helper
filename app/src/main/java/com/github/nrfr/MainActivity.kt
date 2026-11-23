@@ -1,122 +1,143 @@
-// Modified for Nrfr Next (2026); see NOTICE and CREDITS.md for provenance and changes.
+// Modified for SIM Region Helper (2026): explicit, independent authorization checks.
 package com.github.nrfr
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
 import androidx.activity.ComponentActivity
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import com.github.nrfr.ui.screens.AboutScreen
-import com.github.nrfr.ui.screens.MainScreen
-import com.github.nrfr.ui.screens.PermissionScreen
+import com.github.nrfr.compat.*
+import com.github.nrfr.ui.screens.*
 import com.github.nrfr.ui.theme.NrfrTheme
 import rikka.shizuku.Shizuku
+import moe.shizuku.server.IShizukuService
 
 class MainActivity : ComponentActivity() {
-    private var isShizukuReady by mutableStateOf(false)
-    private var isPhoneReadReady by mutableStateOf(false)
-    private val phonePermission = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        isPhoneReadReady = granted
-        if (granted) checkShizukuStatus()
+    private var authorization by mutableStateOf(AuthorizationState())
+    private var requesting by mutableStateOf(false)
+    private var requestError = ""
+    private val handler = Handler(Looper.getMainLooper())
+    private val gateway = object : AuthorizationGateway {
+        override fun phoneAllowed() = checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED
+        override fun binderAlive() = Shizuku.pingBinder()
+        // The SDK convenience methods cache positive grants/rationale. Query the live
+        // service's generated AIDL interface so revocation does not reuse a cached grant.
+        override fun permissionGranted() = liveService().checkSelfPermission()
+        override fun requestBlocked() = liveService().shouldShowRequestPermissionRationale()
     }
-    private val shizukuPermissionListener = Shizuku.OnRequestPermissionResultListener {
-        _, grantResult ->
-        isShizukuReady = grantResult == PackageManager.PERMISSION_GRANTED
-        if (!isShizukuReady) {
-            Toast.makeText(this, "需要 Shizuku 权限才能运行", Toast.LENGTH_LONG).show()
-        }
+    private fun liveService(): IShizukuService = IShizukuService.Stub.asInterface(
+        Shizuku.getBinder() ?: throw IllegalStateException("Shizuku 已断开"))
+    private val poll = object : Runnable {
+        override fun run() { refreshAuthorization(); handler.postDelayed(this, 2000) }
     }
-    private val shizukuBinderListener = Shizuku.OnBinderReceivedListener {
-        runOnUiThread { checkShizukuStatus() }
+    private val phonePermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        refreshAuthorization()
     }
-    private val shizukuDeadListener = Shizuku.OnBinderDeadListener {
-        runOnUiThread { isShizukuReady = false }
+    private val permissionListener = Shizuku.OnRequestPermissionResultListener { _, _ ->
+        runOnUiThread { requesting = false; refreshAuthorization() }
+    }
+    private val binderListener = Shizuku.OnBinderReceivedListener {
+        runOnUiThread { refreshAuthorization() }
+    }
+    private val deadListener = Shizuku.OnBinderDeadListener {
+        runOnUiThread { requesting = false; refreshAuthorization() }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        isPhoneReadReady = checkSelfPermission(Manifest.permission.READ_PHONE_STATE) ==
-            PackageManager.PERMISSION_GRANTED
-        if (!isPhoneReadReady) phonePermission.launch(Manifest.permission.READ_PHONE_STATE)
-        else checkShizukuStatus()
-
-        // 添加 Shizuku 权限监听器
-        Shizuku.addRequestPermissionResultListener(shizukuPermissionListener)
-
-        // 添加 Shizuku 绑定监听器
-        Shizuku.addBinderReceivedListener(shizukuBinderListener)
-        Shizuku.addBinderDeadListener(shizukuDeadListener)
-
+        // Register before inspecting; sticky delivery also covers an already-received Binder.
+        Shizuku.addRequestPermissionResultListener(permissionListener)
+        Shizuku.addBinderDeadListener(deadListener)
+        Shizuku.addBinderReceivedListenerSticky(binderListener)
+        refreshAuthorization()
         setContent {
             NrfrTheme {
-                var showAbout by rememberSaveable { mutableStateOf(false) }
-                BackHandler(enabled = showAbout) { showAbout = false }
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    if (showAbout) {
-                        AboutScreen(onBack = { showAbout = false })
-                    } else if (isShizukuReady && isPhoneReadReady) {
-                        MainScreen(onShowAbout = { showAbout = true })
-                    } else {
-                        PermissionScreen(
-                            phoneReady = isPhoneReadReady,
-                            onRetry = {
-                                if (!isPhoneReadReady) phonePermission.launch(Manifest.permission.READ_PHONE_STATE)
-                                else checkShizukuStatus()
-                            },
-                            onShowAbout = { showAbout = true }
-                        )
-                    }
+                var about by rememberSaveable { mutableStateOf(false) }
+                var permissions by rememberSaveable { mutableStateOf(false) }
+                BackHandler(enabled = about || (permissions && authorization.ready)) {
+                    if (about) about = false else permissions = false
+                }
+                when {
+                    about -> AboutScreen { about = false }
+                    authorization.ready && !permissions -> MainScreen(
+                        onShowAbout = { about = true }, onShowPermissions = { permissions = true })
+                    else -> PermissionScreen(
+                        state = authorization, requesting = requesting,
+                        onRefresh = { requesting = false; refreshAuthorization() },
+                        onPhoneRequest = { phonePermission.launch(Manifest.permission.READ_PHONE_STATE) },
+                        onPhoneSettings = { openIntent(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) },
+                        onShizukuRequest = { requestShizuku() },
+                        onOpenShizuku = { openShizuku() },
+                        onCopy = { copyAuthorization() },
+                        onContinue = { permissions = false }, onShowAbout = { about = true }
+                    )
                 }
             }
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        isPhoneReadReady = checkSelfPermission(Manifest.permission.READ_PHONE_STATE) ==
-            PackageManager.PERMISSION_GRANTED
-        if (isPhoneReadReady) checkShizukuStatus(requestIfMissing = false)
+    private fun refreshAuthorization() {
+        authorization = AuthorizationProbe.inspect(gateway)
+        if (authorization.shizuku == ShizukuAccess.GRANTED) requestError = ""
+        if (authorization.detail.isEmpty() && requestError.isNotEmpty())
+            authorization = authorization.copy(detail = requestError)
+        if (authorization.shizuku != ShizukuAccess.NOT_GRANTED) requesting = false
     }
 
-    private fun checkShizukuStatus(requestIfMissing: Boolean = true) {
-        if (!isPhoneReadReady) return
-        isShizukuReady = if (!Shizuku.pingBinder()) {
-            Toast.makeText(this, "请先安装并启用 Shizuku", Toast.LENGTH_LONG).show()
-            false
-        } else {
-            val hasPermission = runCatching {
-                Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
-            }.getOrDefault(false)
-            if (!hasPermission && requestIfMissing) {
-                Shizuku.requestPermission(0)
-            }
-            hasPermission
+    private fun requestShizuku() {
+        refreshAuthorization()
+        if (requesting || authorization.shizuku != ShizukuAccess.NOT_GRANTED) return
+        requestError = ""
+        requesting = true
+        try { Shizuku.requestPermission(42) }
+        catch (e: Exception) {
+            requesting = false
+            requestError = "授权请求失败：${e.javaClass.simpleName}: ${e.message.orEmpty()}"
+            authorization = authorization.copy(detail = requestError)
         }
     }
 
+    private fun openShizuku() {
+        val intent = packageManager.getLaunchIntentForPackage("moe.shizuku.privileged.api")
+        if (intent != null) openIntent(intent)
+        else Toast.makeText(this, "未找到 Shizuku，请确认已安装在同一用户空间。", Toast.LENGTH_LONG).show()
+    }
+
+    private fun openIntent(intent: Intent) {
+        runCatching { startActivity(intent) }.onFailure {
+            Toast.makeText(this, "无法打开，请从系统设置或桌面手动进入。", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun copyAuthorization() {
+        refreshAuthorization()
+        val report = "${DeviceDiagnostics.header()}\nPackage: $packageName\nPhone permission: ${authorization.phoneAllowed}" +
+            "\nShizuku: ${authorization.shizuku}\n${authorization.detail}\nAuthorization inspection only; no SIM writes."
+        getSystemService(android.content.ClipboardManager::class.java)
+            .setPrimaryClip(android.content.ClipData.newPlainText("授权诊断", report))
+        Toast.makeText(this, "当前授权诊断已复制", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onStart() { super.onStart(); handler.post(poll) }
+    override fun onResume() { super.onResume(); refreshAuthorization() }
+    override fun onStop() { handler.removeCallbacks(poll); super.onStop() }
     override fun onDestroy() {
+        handler.removeCallbacks(poll)
+        Shizuku.removeRequestPermissionResultListener(permissionListener)
+        Shizuku.removeBinderReceivedListener(binderListener)
+        Shizuku.removeBinderDeadListener(deadListener)
         super.onDestroy()
-        Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener)
-        Shizuku.removeBinderReceivedListener(shizukuBinderListener)
-        Shizuku.removeBinderDeadListener(shizukuDeadListener)
     }
 }
