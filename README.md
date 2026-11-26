@@ -6,7 +6,7 @@
 
 SIM 地区助手 是非官方社区改版，保留原作者归属、上游提交历史及开源许可。本版不是任何上游作者的官方发行版，也不代表其认可本版修改。完整来源链见 [作者致谢](CREDITS.md) 和 [修改声明](NOTICE)。
 
-[下载安装包](https://github.com/Aldrich2326/SIM-Region-Helper/releases) · [使用与兼容性](docs/COMPATIBILITY.md) · [构建与验证](docs/RELEASING.md) · [Apache-2.0](LICENSE)
+[下载 1.1.0-preview3 APK](https://github.com/Aldrich2326/SIM-Region-Helper/releases/download/v1.1.0-preview3/SIM-Region-Helper-v1.1.0-preview3.apk) · [发行说明](https://github.com/Aldrich2326/SIM-Region-Helper/releases/tag/v1.1.0-preview3) · [使用与兼容性](docs/COMPATIBILITY.md) · [构建与验证](docs/RELEASING.md) · [Apache-2.0](LICENSE)
 
 ## 界面
 
@@ -18,12 +18,13 @@ SIM 地区助手 是非官方社区改版，保留原作者归属、上游提交
 | --- | --- |
 | ![浅色主界面](docs/images/main-light.png) | ![深色主界面](docs/images/main-dark.png) |
 
-| 作者与来源 | 权限引导 |
+| 作者与来源 | 授权状态 |
 | --- | --- |
-| ![作者与来源](docs/images/about-sources.png) | ![权限引导](docs/images/permission.png) |
+| ![作者与来源](docs/images/about-sources.png) | ![授权状态](docs/images/permission.png) |
 
 ## 本版改进
 
+- 分别检测 Shizuku 连接、应用授权和电话状态权限。支持独立申请、前台自动刷新和复制当前授权诊断。
 - SIM 卡、目标地区、应用操作分层展示；当前地区相同时避免重复写入。
 - SIM 未就绪及操作进行时禁用相关操作，显示可读的状态与结果。
 - 保留来自直接上游的 instrumentation 权限委托路径，增加 Android 16 状态与广播兼容处理。
@@ -35,10 +36,14 @@ SIM 地区助手 是非官方社区改版，保留原作者归属、上游提交
 ## 开始使用
 
 1. 在 [发行版页面](https://github.com/Aldrich2326/SIM-Region-Helper/releases) 下载已签名 APK。
-2. 安装并启动 [Shizuku](https://github.com/RikkaApps/Shizuku)，单独授权 SIM 地区助手。
-3. 允许读取电话状态，进入主界面后可先点“检查环境”。该检查不修改国家码。
+2. 安装并启动 Shizuku，确认其首页显示“正在运行”。[Shizuku 项目](https://github.com/RikkaApps/Shizuku)
+3. 打开 SIM 地区助手，在“授权状态”页分别点击“申请 Shizuku 授权”和“申请电话状态权限”。两项权限可按任意顺序申请。
 4. 需要设置时，选择 SIM、目标地区，再点击“应用到 SIM …”。双卡分别处理。
 5. 需要撤销时，使用“还原所选 SIM 地区”，并查看回读核验结果。
+
+如果 Shizuku 的授权列表里没有本应用，请先回到 SIM 地区助手，点击“申请 Shizuku 授权”。如果按钮不可用，请查看“Shizuku 连接”与“Shizuku 应用授权”的状态提示。“未连接”时，确认两款应用在同一手机用户空间内，并运行 Shizuku 后点“重新检测授权”。“已拒绝再次申请”时，打开 Shizuku 检查应用授权。若问题持续，可复制当前授权诊断并提交脱敏后的信息。
+
+进入主界面后，可从“环境与诊断”打开“查看授权状态”。“检查环境”可单独运行，用于读取兼容信息。
 
 只调整**系统报告的 SIM 国家码**，不会改变实体 SIM、手机号、真实运营商或 IP 地址。它不是 VPN，也不会自动解锁依赖 IP、GPS、账号地区等条件的功能。配置为临时覆盖，重启、SIM 刷新或系统更新后可能失效。
 
